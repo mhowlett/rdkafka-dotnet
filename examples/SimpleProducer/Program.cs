@@ -22,6 +22,7 @@ namespace SimpleProducer
                 {
                     byte[] data = Encoding.UTF8.GetBytes(text);
                     Task<DeliveryReport> deliveryReport = topic.Produce(data);
+
                     var unused = deliveryReport.ContinueWith(task =>
                     {
                         Console.WriteLine($"Partition: {task.Result.Partition}, Offset: {task.Result.Offset}");

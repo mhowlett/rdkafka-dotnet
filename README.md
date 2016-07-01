@@ -1,3 +1,11 @@
+
+
+## Nothing of value here.
+
+### Just playing with some ideas
+
+
+
 rdkafka-dotnet - C# Apache Kafka client
 =======================================
 
