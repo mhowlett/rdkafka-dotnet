@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
 using RdKafka;
 
 namespace SimpleProducer
@@ -9,26 +10,20 @@ namespace SimpleProducer
     {
         public static void Main(string[] args)
         {
-            string brokerList = args[0];
-            string topicName = args[1];
+            var topicNames = Enumerable.Range(1, 100).Select(a => $"tmp_topic_{a}");
 
-            using (Producer producer = new Producer(brokerList))
-            using (Topic topic = producer.Topic(topicName))
-            {
-                Console.WriteLine($"{producer.Name} producing on {topic.Name}. q to exit.");
+            var startTime = DateTime.Now;
+            using (Producer producer = new Producer("localhost:9092")) {
+                byte[] data = Encoding.UTF8.GetBytes("hello world");
 
-                string text;
-                while ((text = Console.ReadLine()) != "q")
-                {
-                    byte[] data = Encoding.UTF8.GetBytes(text);
-                    Task<DeliveryReport> deliveryReport = topic.Produce(data);
-
-                    var unused = deliveryReport.ContinueWith(task =>
-                    {
-                        Console.WriteLine($"Partition: {task.Result.Partition}, Offset: {task.Result.Offset}");
-                    });
+                int cnt = 100000;
+                while (cnt-- > 0) {
+                    foreach (var t in topicNames) {
+                        producer.Send(t, data);
+                    }
                 }
             }
+            Console.WriteLine(DateTime.Now - startTime);
         }
     }
 }

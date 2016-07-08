@@ -108,6 +108,7 @@ namespace RdKafka
             }
         }
 
+/*
         /// <summary>
         /// Request Metadata from broker.
         ///
@@ -121,6 +122,7 @@ namespace RdKafka
         public Task<Metadata> Metadata (bool allTopics=true, Topic onlyForTopic=null,
                 bool includeInternal=false, TimeSpan timeout=default(TimeSpan))
             => Task.FromResult(handle.Metadata(allTopics, onlyForTopic?.handle, includeInternal, timeout));
+*/
 
         /// <summary>
         /// Request lowest and highest offsets for a topic partition from broker.

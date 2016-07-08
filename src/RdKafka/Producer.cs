@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using RdKafka.Internal;
@@ -8,7 +9,7 @@ namespace RdKafka
     /// <summary>
     /// High-level, asynchronous message producer.
     /// </summary>
-    public class Producer : Handle
+    public partial class Producer : Handle
     {
         public Producer(string brokerList) : this(null, brokerList) {}
 
@@ -26,7 +27,17 @@ namespace RdKafka
             }
         }
 
-        public Topic Topic(string topic, TopicConfig config = null) => new Topic(handle, this, topic, config);
+        private Dictionary<string, Topic> _topics = new Dictionary<string, Topic>();
+
+        public Task<RecordMetadata> Send(string topic, byte[] data) {
+            Topic topicHandle;
+            if (!_topics.TryGetValue(topic, out topicHandle)) {
+                topicHandle = new Topic(handle, this, topic, null);
+                _topics.Add(topic, topicHandle);
+            }
+            var recordMetadata = topicHandle.Produce(data);
+            return recordMetadata;
+        }
 
         // Explicitly keep reference to delegate so it stays alive
         static LibRdKafka.DeliveryReportCallback DeliveryReportDelegate = DeliveryReportCallback;
@@ -36,7 +47,7 @@ namespace RdKafka
         {
             // msg_opaque was set by Topic.Produce
             var gch = GCHandle.FromIntPtr(rkmessage._private);
-            var deliveryCompletionSource = (TaskCompletionSource<DeliveryReport>) gch.Target;
+            var deliveryCompletionSource = (TaskCompletionSource<RecordMetadata>) gch.Target;
             gch.Free();
 
             if (rkmessage.err != 0)
@@ -48,10 +59,18 @@ namespace RdKafka
                 return;
             }
 
-            deliveryCompletionSource.SetResult(new DeliveryReport() {
+            deliveryCompletionSource.SetResult(new RecordMetadata() {
+                Topic = "Some Topic",
                 Offset = rkmessage.offset,
                 Partition = rkmessage.partition
             });
+        }
+
+        public override void Dispose() {
+            foreach (var t in _topics) {
+                t.Value.Dispose();
+            }
+            base.Dispose();
         }
     }
 }
